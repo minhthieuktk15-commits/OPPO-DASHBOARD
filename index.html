@@ -336,8 +336,8 @@ function parseChiTietShop(tsv){
   const FIND_START=17, FIND_END=27, DT_FIND=28;
   const RENO_START=29, RENO_END=53, DT_RENO=54;
   const A_START=55, A_END=85, DT_A=86;
-  const IOT_START=87, IOT_END=113, DT_IOT=114, DT_IOT4=115;
-  const TOTAL_SO_IOT=116;
+  const IOT_START=87, IOT_END=114, DT_IOT=115, DT_IOT4=116;
+  const TOTAL_SO_IOT=117;
   const findNames=[], renoNames=[], aNames=[], iotNames=[];
   for (let i=FIND_START;i<=FIND_END;i++) findNames.push({idx:i,name:cleanProdName(headerRow[i]),price:parseNum(priceRow[i])});
   for (let i=RENO_START;i<=RENO_END;i++) renoNames.push({idx:i,name:cleanProdName(headerRow[i]),price:parseNum(priceRow[i])});
