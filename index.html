@@ -164,7 +164,7 @@
 </div>
 
 <div class="tab-panel active" id="t1">
-  <div class="section-title">Tổng quan tháng 8 - theo kênh</div>
+  <div class="section-title" id="section1Title">Tổng quan - theo kênh</div>
   <div id="channelBlocks"></div>
 </div>
 
@@ -883,6 +883,7 @@ document.getElementById('refreshBtn').addEventListener('click', loadData);
 (function setMonthTag(){
   const now = new Date();
   document.getElementById('monthTag').textContent = `Tháng ${now.getMonth()+1} / ${now.getFullYear()}`;
+  document.getElementById('section1Title').textContent = `Tổng quan tháng ${now.getMonth()+1} - theo kênh`;
 })();
 document.getElementById('snapshotBtn').addEventListener('click', ()=>{
   if (!window.__joinedFull){ alert('Dữ liệu chưa tải xong, thử lại sau vài giây.'); return; }
