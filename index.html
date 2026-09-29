@@ -91,6 +91,16 @@
   .filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
   .filter-bar select{font-family:'Montserrat',sans-serif;font-size:9pt;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);}
   .filter-bar .flabel{font-size:9pt;color:var(--caption);font-weight:600;}
+  .ms{position:relative;display:inline-block;}
+  .ms-btn{font-family:'Montserrat',sans-serif;font-size:9pt;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;min-width:130px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .ms-btn:after{content:'▾';font-size:7pt;color:var(--caption);}
+  .ms-btn:hover{border-color:var(--oppo);}
+  .ms-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14);max-height:240px;overflow:auto;min-width:200px;padding:6px;}
+  .ms.open .ms-panel{display:block;}
+  .ms-panel label{display:flex;align-items:center;gap:7px;font-size:9pt;padding:5px 6px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+  .ms-panel label:hover{background:#f0f6f2;}
+  .ms-panel .ms-all{border-bottom:1px solid var(--border);margin-bottom:4px;padding-bottom:7px;font-weight:600;color:var(--oppo);}
+  .ms-panel input[type=checkbox]{accent-color:var(--oppo);width:13px;height:13px;}
 
   .tier-row{display:grid;grid-template-columns:260px 170px 90px 1fr;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
   .tier-row .shop-col{font-weight:700;color:var(--text);}
@@ -201,9 +211,9 @@
   <div class="section-title">2.3 Share theo PG - Tổng &amp; theo phân khúc giá</div>
   <div class="filter-bar">
     <span class="flabel">Lọc theo Shop:</span>
-    <select id="filterShop23"><option value="">Tất cả</option></select>
+    <div class="ms" id="filterShop23"><button type="button" class="ms-btn">Tất cả</button><div class="ms-panel"></div></div>
     <span class="flabel">Lọc theo PG:</span>
-    <select id="filterPg23"><option value="">Tất cả</option></select>
+    <div class="ms" id="filterPg23"><button type="button" class="ms-btn">Tất cả</button><div class="ms-panel"></div></div>
   </div>
   <div class="card table-scroll">
     <table>
@@ -223,9 +233,9 @@
       <option value="oka">OKA: FPT, VTS, OKA</option>
     </select>
     <span class="flabel">Shop:</span>
-    <select id="filterShop3"><option value="">Tất cả</option></select>
+    <div class="ms" id="filterShop3"><button type="button" class="ms-btn">Tất cả</button><div class="ms-panel"></div></div>
     <span class="flabel">PG:</span>
-    <select id="filterPg3"><option value="">Tất cả</option></select>
+    <div class="ms" id="filterPg3"><button type="button" class="ms-btn">Tất cả</button><div class="ms-panel"></div></div>
   </div>
 
   <div class="section-title">3.1 Xếp hạng Shop theo Doanh thu</div>
@@ -333,6 +343,49 @@ function isNoPg(pg){ return !pg || pg.trim()===''||pg.trim()==='0'; }
 function fmtTr(v){ return (v/1e6).toLocaleString('vi-VN', {maximumFractionDigits:1}) + 'tr'; }
 function initials(name){ const parts=(name||'').trim().split(/\s+/); return (parts[parts.length-2]?.[0]||'')+(parts[parts.length-1]?.[0]||''); }
 function htClass(pct){ if(pct===null) return 'mid'; if (pct<80) return 'low'; if (pct<100) return 'mid'; return 'high'; }
+
+function initMultiSelect(id, values, onChange){
+  const root = document.getElementById(id);
+  if (!root) return;
+  const btn = root.querySelector('.ms-btn');
+  const panel = root.querySelector('.ms-panel');
+  panel.innerHTML = '<label class="ms-all"><input type="checkbox" class="ms-all-cb" checked> Tất cả</label>' +
+    values.map(v=>`<label><input type="checkbox" class="ms-cb" value="${v}" checked> ${v}</label>`).join('');
+  const allCb = panel.querySelector('.ms-all-cb');
+  const cbs = [...panel.querySelectorAll('.ms-cb')];
+  function updateBtn(){
+    const checked = cbs.filter(c=>c.checked);
+    if (checked.length===0 || checked.length===cbs.length) btn.textContent = 'Tất cả';
+    else if (checked.length===1) btn.textContent = checked[0].value;
+    else btn.textContent = checked.length + ' đã chọn';
+  }
+  allCb.onchange = ()=>{ cbs.forEach(c=>{ c.checked = allCb.checked; }); updateBtn(); onChange(); };
+  cbs.forEach(c=>{
+    c.onchange = ()=>{
+      if (!c.checked) allCb.checked = false;
+      else if (cbs.every(x=>x.checked)) allCb.checked = true;
+      updateBtn(); onChange();
+    };
+  });
+  updateBtn();
+  btn.onclick = (e)=>{
+    e.stopPropagation();
+    document.querySelectorAll('.ms.open').forEach(o=>{ if (o!==root) o.classList.remove('open'); });
+    root.classList.toggle('open');
+  };
+}
+document.addEventListener('click', (e)=>{
+  if (!e.target.closest('.ms')) document.querySelectorAll('.ms.open').forEach(o=>o.classList.remove('open'));
+});
+function getMultiSelectValues(id){
+  const root = document.getElementById(id);
+  if (!root) return null;
+  const cbs = [...root.querySelectorAll('.ms-cb')];
+  const checked = cbs.filter(c=>c.checked).map(c=>c.value);
+  if (checked.length===0 || checked.length===cbs.length) return null;
+  return checked;
+}
+
 function findHeaderIndex(headerRow, label, occurrence){
   occurrence = occurrence || 1;
   let count = 0;
@@ -644,19 +697,18 @@ function buildSection23(soStores, joined){
   });
   window.__section23Rows = rows;
 
-  const shopSel = document.getElementById('filterShop23'), pgSel = document.getElementById('filterPg23');
-  shopSel.innerHTML = '<option value="">Tất cả</option>' + rows.map(r=>`<option value="${r.shop}">${r.shop}</option>`).join('');
-  pgSel.innerHTML = '<option value="">Tất cả</option>' + [...new Set(rows.map(r=>r.pg))].map(p=>`<option value="${p}">${p}</option>`).join('');
-  shopSel.onchange = renderSection23Table;
-  pgSel.onchange = renderSection23Table;
+  const shops23 = [...new Set(rows.map(r=>r.shop))];
+  const pgs23 = [...new Set(rows.map(r=>r.pg))];
+  initMultiSelect('filterShop23', shops23, renderSection23Table);
+  initMultiSelect('filterPg23', pgs23, renderSection23Table);
   renderSection23Table();
 }
 
 function renderSection23Table(){
   const rows = window.__section23Rows || [];
-  const shopF = document.getElementById('filterShop23').value;
-  const pgF = document.getElementById('filterPg23').value;
-  const filtered = rows.filter(r=>(!shopF||r.shop===shopF)&&(!pgF||r.pg===pgF));
+  const shopF = getMultiSelectValues('filterShop23');
+  const pgF = getMultiSelectValues('filterPg23');
+  const filtered = rows.filter(r=>(!shopF||shopF.includes(r.shop))&&(!pgF||pgF.includes(r.pg)));
   const pgShareBody=document.getElementById('pgShareBody'); pgShareBody.innerHTML='';
   filtered.slice().sort((a,b)=>b.shareTotal-a.shareTotal).forEach(t=>{
     const tr=document.createElement('tr');
@@ -669,24 +721,22 @@ function renderSection23Table(){
 function setupSection3Filters(joined){
   const shops = [...new Set(joined.filter(r=>!r.isIND).map(r=>r.displayName))];
   const pgs = [...new Set(joined.filter(r=>!r.noPg).map(r=>r.pgFinal))];
-  const shopSel = document.getElementById('filterShop3'), pgSel = document.getElementById('filterPg3'), kenhSel = document.getElementById('filterKenh3');
-  shopSel.innerHTML = '<option value="">Tất cả</option>' + shops.map(s=>`<option value="${s}">${s}</option>`).join('');
-  pgSel.innerHTML = '<option value="">Tất cả</option>' + pgs.map(p=>`<option value="${p}">${p}</option>`).join('');
-  shopSel.onchange = ()=>renderSection3(window.__joinedFull);
-  pgSel.onchange = ()=>renderSection3(window.__joinedFull);
+  const kenhSel = document.getElementById('filterKenh3');
+  initMultiSelect('filterShop3', shops, ()=>renderSection3(window.__joinedFull));
+  initMultiSelect('filterPg3', pgs, ()=>renderSection3(window.__joinedFull));
   kenhSel.onchange = ()=>renderSection3(window.__joinedFull);
 }
 
 function applySection3Filter(joined){
   const kenhF = document.getElementById('filterKenh3').value;
-  const shopF = document.getElementById('filterShop3').value;
-  const pgF = document.getElementById('filterPg3').value;
+  const shopF = getMultiSelectValues('filterShop3');
+  const pgF = getMultiSelectValues('filterPg3');
   return joined.filter(r=>{
     if (r.isIND) return false;
     if (kenhF==='ka' && !r.isKA) return false;
     if (kenhF==='oka' && !r.isOKA) return false;
-    if (shopF && r.displayName!==shopF) return false;
-    if (pgF && r.pgFinal!==pgF) return false;
+    if (shopF && !shopF.includes(r.displayName)) return false;
+    if (pgF && !pgF.includes(r.pgFinal)) return false;
     return true;
   });
 }
@@ -800,9 +850,9 @@ function renderSection4(team, soNgay){
   destroyChart('teamDailyChart');
   if (soNgay.dates.length){
     charts.teamDailyChart = new Chart(document.getElementById('teamDailyChart'), {
-      type:'line',
-      data:{labels:soNgay.dates, datasets:[{label:'S.O toàn team KA (máy/ngày)', data:soNgay.teamTotals, borderColor:'#016C38', backgroundColor:'#016C38', tension:.3, fill:false}]},
-      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true}}}
+      type:'bar',
+      data:{labels:soNgay.dates, datasets:[{label:'S.O toàn team KA (máy/ngày)', data:soNgay.teamTotals, backgroundColor:'#016C38', borderRadius:4}]},
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true}}, scales:{y:{beginAtZero:true}}}
     });
   }
 }
@@ -944,9 +994,9 @@ function renderPgDetail(teamAsc, idx, soNgay){
     const canvas = document.getElementById('pgDailyChart');
     if (canvas){
       charts.pgDailyChart = new Chart(canvas, {
-        type:'line',
-        data:{labels:soNgay.dates, datasets:[{label:'S.O/ngày', data:combined, borderColor:'#016C38', backgroundColor:'#016C38', tension:.3}]},
-        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}
+        type:'bar',
+        data:{labels:soNgay.dates, datasets:[{label:'S.O/ngày', data:combined, backgroundColor:'#016C38', borderRadius:4}]},
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
       });
     }
   }
